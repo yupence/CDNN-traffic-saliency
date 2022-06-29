@@ -1,7 +1,8 @@
 import argparse
 import os
 import time
-import cPickle as pickle
+import pickle
+#import cPickle as pickle
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
@@ -21,7 +22,7 @@ warnings.simplefilter("ignore")
 parser = argparse.ArgumentParser()
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('--epochs', default=100, type=int, metavar='N',
+parser.add_argument('--epochs', default=30, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -41,16 +42,19 @@ parser.add_argument('--split', default=0, type=int)
 args = parser.parse_args()
 
 name = 'traffic_net'
-ckpts = 'ckpts/cdnn/'  #save model
-if not os.path.exists(ckpts): os.makedirs(ckpts)
+ckpts = 'ckpts/cdnn/'  # save model
+if not os.path.exists(ckpts):
+    os.makedirs(ckpts)
 
 log_file = os.path.join(ckpts + "/train_log_%s.txt" % (name, ))
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', filename=log_file)
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(message)s', filename=log_file)
 
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 console.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
 logging.getLogger('').addHandler(console)
+
 
 def main():
     #global args, best_score
@@ -64,13 +68,12 @@ def main():
     model = Model()
     model = model.cuda()
 
-
     params = model.parameters()
 
     cudnn.benchmark = True
 
     optimizer = torch.optim.Adam(params, args.lr,
-                                weight_decay=args.weight_decay)
+                                 weight_decay=args.weight_decay)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -85,7 +88,8 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
-    root = '/media/tao/A3D8-E2F7/traffic_frames/'  ### traffic_frames root
+    # traffic_frames root
+    root = r'/home/yupengcheng/project/CDNN/CDNN-traffic-saliency/traffic_frames/'
 
     train_imgs = [json.loads(line) for line in open(root + 'train.json')]
 
@@ -97,26 +101,28 @@ def main():
     # exit(0)
 
     train_loader = DataLoader(
-            ImageList(root, train_imgs, for_train=True),
-            batch_size=args.batch_size, shuffle=True,
-            num_workers=args.workers,
-            pin_memory=True)
+        ImageList(root, train_imgs, for_train=True),
+        batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers,
+        pin_memory=False)
 
     valid_loader = DataLoader(
-            ImageList(root, valid_imgs),
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers,
-            pin_memory=True)
+        ImageList(root, valid_imgs),
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers,
+        pin_memory=False)
     test_loader = DataLoader(
-            ImageList(root, test_imgs),
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers,
-            pin_memory=True)
+        ImageList(root, test_imgs),
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers,
+        pin_memory=False)
 
     criterion = nn.BCELoss().cuda()
 
-    logging.info('-------------- New training session, LR = %f ----------------' % (args.lr, ))
-    logging.info('-- length of training images = %d--length of valid images = %d--' % (len(train_imgs),len(valid_imgs)))
+    logging.info(
+        '-------------- New training session, LR = %f ----------------' % (args.lr, ))
+    logging.info('-- length of training images = %d--length of valid images = %d--' %
+                 (len(train_imgs), len(valid_imgs)))
     logging.info('-- length of test images = %d--' % (len(test_imgs)))
     best_loss = float('inf')
     file_name = os.path.join(ckpts, 'model_best_%s.tar' % (name, ))
@@ -125,16 +131,17 @@ def main():
 
         # train for one epoch
         train_loss = train(
-                train_loader, model, criterion, optimizer, epoch)
+            train_loader, model, criterion, optimizer, epoch)
         # print train_loss
         # exit(0)
         # evaluate on validation set
         valid_loss = validate(
-                valid_loader, model, criterion)
+            valid_loader, model, criterion)
 
         # remember best lost and save checkpoint
         best_loss = min(valid_loss, best_loss)
-        file_name_last = os.path.join(ckpts, 'model_epoch_%d.tar' % (epoch + 1, ))
+        file_name_last = os.path.join(
+            ckpts, 'model_epoch_%d.tar' % (epoch + 1, ))
         torch.save({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
@@ -150,9 +157,8 @@ def main():
                 'valid_loss': valid_loss,
             }, file_name)
 
-
         msg = 'Epoch: {:02d} Train loss {:.4f} | Valid loss {:.4f}'.format(
-                epoch+1, train_loss, valid_loss)
+            epoch+1, train_loss, valid_loss)
         logging.info(msg)
 
     checkpoint = torch.load(file_name)
@@ -169,13 +175,15 @@ def train(train_loader, model, criterion, optimizer, epoch):
     # switch to train mode
     model.train()
     start = time.time()
+    # print('train_loader[0]',train_loader[0])
     for i, (input, target) in enumerate(train_loader):
         input = input.cuda()
         target = target.cuda()
 
-        #input = input.cuda(async=True)
-        #target = target.cuda(async=True)
-
+        # input = input.cuda(async=True)
+        # target = target.cuda(async=True)
+        #print('shape of input',input.shape)
+        #print('shape of target', target.shape)
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
 
@@ -184,11 +192,13 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # m = nn.Sigmoid()
         # loss = criterion(m(output), m(target_var))
+        # print('shape of output',output.shape)
+        # print('shape of target_var',target_var.shape)
 
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
-        losses.update(loss.data[0], target.size(0))
+        losses.update(loss.item(), target.size(0))
 
         optimizer.zero_grad()
         loss.backward()
@@ -196,12 +206,14 @@ def train(train_loader, model, criterion, optimizer, epoch):
         optimizer.step()
 
         if (i+1) % 1000 == 0:
-            msg = 'Training Epoch {:03d}  Iter {:03d} Loss {:.6f} in {:.3f}s'.format(epoch+1, i+1, losses.avg, time.time() - start)
+            msg = 'Training Epoch {:03d}  Iter {:03d} Loss {:.6f} in {:.3f}s'.format(
+                epoch+1, i+1, losses.avg, time.time() - start)
             start = time.time()
             logging.info(msg)
             print(msg)
 
     return losses.avg
+
 
 def validate(valid_loader, model, criterion):
     losses = AverageMeter()
@@ -214,7 +226,6 @@ def validate(valid_loader, model, criterion):
         input = input.cuda()
         target = target.cuda()
 
-
         input_var = torch.autograd.Variable(input, volatile=True)
         target_var = torch.autograd.Variable(target, volatile=True)
 
@@ -223,14 +234,16 @@ def validate(valid_loader, model, criterion):
 
         loss = criterion(output, target_var)
         # measure accuracy and record loss
-        losses.update(loss.data[0], target.size(0))
+        losses.update(loss.item(), target.size(0))
 
-        msg = 'Validating Iter {:03d} Loss {:.6f} in {:.3f}s'.format(i+1, losses.avg, time.time() - start)
+        msg = 'Validating Iter {:03d} Loss {:.6f} in {:.3f}s'.format(
+            i+1, losses.avg, time.time() - start)
         start = time.time()
-           # logging.info(msg)
+        # logging.info(msg)
         print(msg)
 
     return losses.avg
+
 
 def predict(valid_loader, model):
 
@@ -256,10 +269,21 @@ def predict(valid_loader, model):
     return outputs, targets
 
 
+def test_set(test_loader, model):
+    model.eval()
+    #inputs = []
+    #targets = []
+    for i, (input, target) in enumerate(test_loader):
+        input = input.cuda()
+        input_var = torch.autograd.Variable(input, volatile=True)
+        output = model(input_var)
+        p_output = nn.functional.softmax(target, dim=1)
+    return p_output
 
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 

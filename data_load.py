@@ -3,9 +3,10 @@ import imageio as io
 import cv2
 import torch
 from scipy.ndimage import filters
-from numpy import *
+#from numpy import *
+import numpy as np
 import scipy.io as sio
-
+import os
 # shape = (180, 320)
 
 def transform(x, y):
@@ -30,7 +31,8 @@ def getLabel(vid_index, frame_index):
     mask = mask.astype('float32') / 255.0
 
     if mask.max() == 0:
-        print mask.max()
+        pass
+        #print(mask.max())
         # print img_name
     else:
         mask = mask / mask.max()
@@ -49,11 +51,11 @@ class ImageList(Dataset):
 
         image_name = os.path.join(self.root, img_name)
         img = io.imread(image_name)
-        img = cv2.resize(img, (320, 192), interpolation=cv2.INTER_CUBIC)
+        #img = cv2.resize(img, (320, 192), interpolation=cv2.INTER_CUBIC)
         img = img.astype('float32')/255.0
 
         mask = getLabel(vid_index, frame_index)
-
+        mask = cv2.resize(mask,(320,192))
         if self.for_train:
             img, mask = transform(img, mask)
 
@@ -62,8 +64,7 @@ class ImageList(Dataset):
         img = np.ascontiguousarray(img)
 
         mask = np.ascontiguousarray(mask)
-        print torch.from_numpy(img)
-        exit(0)
+       # print(torch.from_numpy(img))
         return torch.from_numpy(img), torch.from_numpy(mask)
 
     def __len__(self):
