@@ -9,11 +9,14 @@ import scipy.io as sio
 import os
 # shape = (180, 320)
 
+
 def transform(x, y):
     if np.random.uniform() < 0.5:
         x = x[:, ::-1]
         y = y[:, ::-1]
     return x, y
+
+
 def getLabel(vid_index, frame_index):
     fixdatafile = ('./fixdata/fixdata' + str(vid_index) + '.mat')
     data = sio.loadmat(fixdatafile)
@@ -32,11 +35,12 @@ def getLabel(vid_index, frame_index):
 
     if mask.max() == 0:
         pass
-        #print(mask.max())
+        # print(mask.max())
         # print img_name
     else:
         mask = mask / mask.max()
     return mask
+
 
 class ImageList(Dataset):
     def __init__(self, root, imgs, for_train=False):
@@ -51,11 +55,11 @@ class ImageList(Dataset):
 
         image_name = os.path.join(self.root, img_name)
         img = io.imread(image_name)
-        #img = cv2.resize(img, (320, 192), interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, (320, 192), interpolation=cv2.INTER_CUBIC)
         img = img.astype('float32')/255.0
 
         mask = getLabel(vid_index, frame_index)
-        mask = cv2.resize(mask,(320,192))
+        mask = cv2.resize(mask, (320, 192))
         if self.for_train:
             img, mask = transform(img, mask)
 
@@ -69,4 +73,3 @@ class ImageList(Dataset):
 
     def __len__(self):
         return len(self.imgs)
-

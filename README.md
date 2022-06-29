@@ -12,6 +12,12 @@ The eye tracking dataset is released [link](https://pan.baidu.com/s/1zyxvEQiMkmO
 
 The folder includes: fixdata, traffic videos, traffic frames.You need to extract each frame from videos and put it in traffic frames folder.
 
+use extract_frames.py to get all frames.
+
+use gen_fixation.py to generate some fixation maps.
+
+use evaluation.py to evaluate the model's performance
+
 
 ## CDNN requirements
 * Pytorch 1.4.0
